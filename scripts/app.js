@@ -70,9 +70,14 @@
     app.getForecast(key, label);
 
     /** 
-     * Add data to cache 
+     * Call function that saves data to local cache 
      */
-    app.saveData(key, label);
+    //app.saveData(key, label);
+
+    /**
+     * Call function that saves data to IndexedDb using localForage
+     */
+    app.saveToIndexedDB(key, label);
 
     app.selectedCities.push({key: key, label: label});
     app.toggleAddDialog(false);
@@ -82,6 +87,14 @@
   document.getElementById('butAddCancel').addEventListener('click', function() {
     app.toggleAddDialog(false);
   });
+
+  /**
+   * 
+   */
+  document.addEventListener('DOMContentLoaded', function() {
+    //app.readCache();   // Using the cache
+    app.getDataFromIndexedDb(); //Using IndexedDb 
+  })
 
 
   /*****************************************************************************
@@ -97,29 +110,74 @@
     if('caches' in window) {
       caches.open(key).then(function(cache) {
         cache.put(new Request(key), new Response(label));
+      }).catch(function(err){
+        console.log(err);
       })
     }
   }
 
   /**
-   * Read data from cache
+   * Get keys from cache
    */
   app.readCache = function() {
     caches.keys().then(function(data) {
       app.updateData(data);
+    }).catch(function(err){
+      console.log(err)
     });
   }
 
   /**
    * Check if there is cache data and update the Forecastcard or use default data
-   * @param {*} test 
+   * @param {*} keys City name saved as a request parameter in the cache
    */
-  app.updateData = function(test) {
-    if(test.length === 0) {
+  app.updateData = function(keys) {
+    if(keys.length === 0) {
       app.updateForecastCard(injectedForecast)
     } else {
-      for(var i = 0; i < test.length; i ++){
-        app.getForecast(test[i], test[i])
+      for(var i = 0; i < keys.length; i ++){
+        app.getForecast(keys[i], keys[i])
+      }
+    }
+  }
+
+  /**
+   * Save data in indexedDb
+   */
+  app.saveToIndexedDB = function(key, value) {
+    localforage.setItem(key, value).then(function(data){
+      console.log(data);
+    }).catch(function(err){
+      console.log(err);
+    })
+  }
+
+  /**
+   * Get keys from IndexedDB
+   */
+  app.getDataFromIndexedDb = function() {
+    localforage.keys().then(function(keys) {
+      app.updateAppData(keys);
+    }).catch(function(err) {
+      console.log(err);
+    })
+  }
+
+  /**
+   * Get data from IndexedDb and if there is data
+   * Iterate the keys array and get the value use the data to udate forecast cards
+   * If there is no saved data use default data
+   * @param {*} keys City names saved in IndexedDb
+   */
+  app.updateAppData = async function(keys){
+    if(keys.length === 0) {
+      app.updateForecastCard(injectedForecast)
+    } else {
+      for(var j = 0; j < keys.length; j ++) {
+        var _city = keys[j];
+        await localforage.getItem(_city).then(function(_label) {
+          app.getForecast(_city, _label)
+        });
       }
     }
   }
@@ -217,10 +275,5 @@
       app.getForecast(key);
     });
   };
-
-  /**Add the selected content */
-  app.addCity = function() {
-    alert('Adding city content')
-  }
-  app.readCache()
 })();
+
