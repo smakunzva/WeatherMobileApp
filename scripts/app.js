@@ -43,6 +43,8 @@
     daysOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   };
 
+  var cacheName = 'weatherData';
+  var _cacheData = [];
   
   /*****************************************************************************
    *
@@ -68,11 +70,6 @@
     var key = selected.value;
     var label = selected.textContent;
     app.getForecast(key, label);
-
-    /** 
-     * Call function that saves data to local cache 
-     */
-    //app.saveData(key, label);
 
     /**
      * Call function that saves data to IndexedDb using localForage
@@ -275,5 +272,35 @@
       app.getForecast(key);
     });
   };
+
+  /***********************************************************************************
+   * 
+   * Methods for dealing with service workers
+   */
+  
+  //Registers a serice worker if it doesn't exists
+  app.registerServiceWorker = function() {
+    if('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+        console.log('service worker registered: ' + registration);
+      })
+    }
+  }
+
+  self.addEventListener('install', function(e){
+    e.waitUntil(
+      caches.open(cacheName).then(function(cache){
+        cache.addAll(_cacheData);
+      })
+    );
+  });
+
+  self.addEventListener('activate').then(function(){
+
+  });
+
+  self.addEventListener('fetch').then(function(){
+
+  })
 })();
 
