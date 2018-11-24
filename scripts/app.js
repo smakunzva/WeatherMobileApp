@@ -43,7 +43,7 @@
     daysOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   };
 
-
+  
   /*****************************************************************************
    *
    * Event listeners for UI elements
@@ -69,8 +69,11 @@
     var label = selected.textContent;
     app.getForecast(key, label);
 
-    /** Add data to cache */
-    
+    /** 
+     * Add data to cache 
+     */
+    app.saveData(key, label);
+
     app.selectedCities.push({key: key, label: label});
     app.toggleAddDialog(false);
   });
@@ -86,6 +89,40 @@
    * Methods to update/refresh the UI
    *
    ****************************************************************************/
+  
+  /**
+   * Save data to cache
+   */
+  app.saveData = function (key, label) {
+    if('caches' in window) {
+      caches.open(key).then(function(cache) {
+        cache.put(new Request(key), new Response(label));
+      })
+    }
+  }
+
+  /**
+   * Read data from cache
+   */
+  app.readCache = function() {
+    caches.keys().then(function(data) {
+      app.updateData(data);
+    });
+  }
+
+  /**
+   * Check if there is cache data and update the Forecastcard or use default data
+   * @param {*} test 
+   */
+  app.updateData = function(test) {
+    if(test.length === 0) {
+      app.updateForecastCard(injectedForecast)
+    } else {
+      for(var i = 0; i < test.length; i ++){
+        app.getForecast(test[i], test[i])
+      }
+    }
+  }
 
   // Toggles the visibility of the add new city dialog.
   app.toggleAddDialog = function(visible) {
@@ -185,5 +222,5 @@
   app.addCity = function() {
     alert('Adding city content')
   }
-  app.updateForecastCard(injectedForecast)
+  app.readCache()
 })();
