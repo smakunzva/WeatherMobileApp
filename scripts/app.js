@@ -86,7 +86,7 @@
   });
 
   /**
-   * 
+   * Wait for DOM content to be loaded before checking for data
    */
   document.addEventListener('DOMContentLoaded', function() {
     //app.readCache();   // Check for user selected data in the cache
