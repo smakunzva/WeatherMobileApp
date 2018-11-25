@@ -89,8 +89,8 @@
    * 
    */
   document.addEventListener('DOMContentLoaded', function() {
-    //app.readCache();   // Using the cache
-    app.getDataFromIndexedDb(); //Using IndexedDb 
+    //app.readCache();   // Check for user selected data in the cache
+    app.getDataFromIndexedDb(); //Check for user selected data from IndexedDb 
   })
 
 
@@ -188,8 +188,7 @@
     }
   };
 
-  // Updates a weather card with the latest weather forecast. If the card
-  // doesn't already exist, it's cloned from the template.
+  //Update forecast card with supplied data values
   app.updateForecastCard = function(data) {
     var card = app.visibleCards[data.key];
     if (!card) {
@@ -276,9 +275,10 @@
   /***********************************************************************************
    * 
    * Methods for dealing with service workers
-   */
+   * 
+   ***********************************************************************************/
   
-  //Registers a serice worker if it doesn't exists
+  /** Register a serice worker if the browser supports the functionality */
   app.registerServiceWorker = function() {
     if('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
@@ -287,6 +287,7 @@
     }
   }
 
+  /** Listen for the install event of the service worker and add cache data */
   self.addEventListener('install', function(e){
     e.waitUntil(
       caches.open(cacheName).then(function(cache){
@@ -295,10 +296,12 @@
     );
   });
 
+  /** Listen for the active event of the service worker */
   self.addEventListener('activate').then(function(){
 
   });
 
+  /** Listen for the fetch event of the service worker */
   self.addEventListener('fetch').then(function(){
 
   })
