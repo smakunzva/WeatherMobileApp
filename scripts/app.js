@@ -44,7 +44,11 @@
   };
 
   var cacheName = 'weatherData';
-  var _cacheData = [];
+  var _cacheData = [
+    '/images/cloudy.png',
+    '/images/fog.png'
+  ];
+  var _dataCacheName;
   
   /*****************************************************************************
    *
@@ -89,6 +93,7 @@
    * Wait for DOM content to be loaded before checking for data
    */
   document.addEventListener('DOMContentLoaded', function() {
+    app.registerServiceWorker() //register service worker
     //app.readCache();   // Check for user selected data in the cache
     app.getDataFromIndexedDb(); //Check for user selected data from IndexedDb 
   })
@@ -281,7 +286,7 @@
   /** Register a serice worker if the browser supports the functionality */
   app.registerServiceWorker = function() {
     if('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+      navigator.serviceWorker.register('/progrssive-worker.js').then(function(registration) {
         console.log('service worker registered: ' + registration);
       })
     }
@@ -296,14 +301,31 @@
     );
   });
 
-  /** Listen for the active event of the service worker */
-  self.addEventListener('activate').then(function(){
-
+  /** Listen for the active event of the service worker 
+   * That's the right place to do cache cleanup
+  */
+  self.addEventListener('activate' , function(e){
+    e.waitUntil(
+      caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(key){
+          if(key !== cacheName ) {
+            caches.delete(key);
+          }
+        }))
+      })
+    )
   });
 
-  /** Listen for the fetch event of the service worker */
-  self.addEventListener('fetch').then(function(){
-
+  /** Listen for the fetch event of the service worker 
+   * Get cache data for slow network or no network we can run our app
+   * Intercept all network by handling fetch request and respond either with cached data or fetch from network
+  */
+  self.addEventListener('fetch', function(e){
+    e.respondWith(
+      caches.match(e.request).then(function(response){
+        return response || fetch(e.request);
+      })
+    )
   })
 })();
 
