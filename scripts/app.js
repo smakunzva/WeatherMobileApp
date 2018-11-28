@@ -43,12 +43,7 @@
     daysOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   };
 
-  var cacheName = 'weatherData';
-  var _cacheData = [
-    '/images/cloudy.png',
-    '/images/fog.png'
-  ];
-  var _dataCacheName;
+  var _citieCacheName = 'cities';
   
   /*****************************************************************************
    *
@@ -81,6 +76,11 @@
     app.saveToIndexedDB(key, label);
 
     app.selectedCities.push({key: key, label: label});
+
+    /**
+     * Save to cache
+     */
+    app.saveData('test', app.selectedCities)
     app.toggleAddDialog(false);
   });
 
@@ -93,9 +93,9 @@
    * Wait for DOM content to be loaded before checking for data
    */
   document.addEventListener('DOMContentLoaded', function() {
-    app.registerServiceWorker() //register service worker
-    //app.readCache();   // Check for user selected data in the cache
-    app.getDataFromIndexedDb(); //Check for user selected data from IndexedDb 
+    //app.registerServiceWorker() //register service worker
+    app.readCache();   // Check for user selected data in the cache
+    //app.getDataFromIndexedDb(); //Check for user selected data from IndexedDb 
   })
 
 
@@ -110,7 +110,7 @@
    */
   app.saveData = function (key, label) {
     if('caches' in window) {
-      caches.open(key).then(function(cache) {
+      caches.open(_citieCacheName).then(function(cache) {
         cache.put(new Request(key), new Response(label));
       }).catch(function(err){
         console.log(err);
@@ -134,13 +134,16 @@
    * @param {*} keys City name saved as a request parameter in the cache
    */
   app.updateData = function(keys) {
-    if(keys.length === 0) {
-      app.updateForecastCard(injectedForecast)
-    } else {
-      for(var i = 0; i < keys.length; i ++){
-        app.getForecast(keys[i], keys[i])
-      }
-    }
+    
+    //TODO: Get cached data from cache
+
+    // caches.open(_citieCacheName).then(function(cache){
+    //   cache.match('test').then(function(response) {
+    //     console.log(response)
+    //   })
+      
+    // })
+    app.updateForecastCard(injectedForecast)
   }
 
   /**
@@ -148,7 +151,7 @@
    */
   app.saveToIndexedDB = function(key, value) {
     localforage.setItem(key, value).then(function(data){
-      console.log(data);
+      console.log('IndexedDB : ' + data);
     }).catch(function(err){
       console.log(err);
     })
@@ -253,6 +256,13 @@
   // Gets a forecast for a specific city and update the card with the data
   app.getForecast = function(key, label) {
     var url = weatherAPIUrlBase + key + '.json';
+    
+    //TODO: Use the Cache then N/W strategy, put safety net if n/w runs faster than cache and up date cache one n/w response
+    
+    /** Make request to the cache */
+    // caches.open().then(function(cache){
+      
+    // });
     // Make the XHR to get the data, then update the card
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
@@ -283,6 +293,7 @@
    * 
    ***********************************************************************************/
   
+
   /** Register a serice worker if the browser supports the functionality */
   app.registerServiceWorker = function() {
     if('serviceWorker' in navigator) {
@@ -291,41 +302,5 @@
       })
     }
   }
-
-  /** Listen for the install event of the service worker and add cache data */
-  self.addEventListener('install', function(e){
-    e.waitUntil(
-      caches.open(cacheName).then(function(cache){
-        cache.addAll(_cacheData);
-      })
-    );
-  });
-
-  /** Listen for the active event of the service worker 
-   * That's the right place to do cache cleanup
-  */
-  self.addEventListener('activate' , function(e){
-    e.waitUntil(
-      caches.keys().then(function(keys){
-        return Promise.all(keys.map(function(key){
-          if(key !== cacheName ) {
-            caches.delete(key);
-          }
-        }))
-      })
-    )
-  });
-
-  /** Listen for the fetch event of the service worker 
-   * Get cache data for slow network or no network we can run our app
-   * Intercept all network by handling fetch request and respond either with cached data or fetch from network
-  */
-  self.addEventListener('fetch', function(e){
-    e.respondWith(
-      caches.match(e.request).then(function(response){
-        return response || fetch(e.request);
-      })
-    )
-  })
 })();
 
