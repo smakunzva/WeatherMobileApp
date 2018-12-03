@@ -263,11 +263,23 @@
     // caches.open().then(function(cache){
       
     // });
+
+    // First try and get AppShell data from indexedDB
+    localforage.getItem('appShellData').then(function(response) {
+      var response = JSON.parse(request.response);
+      response.key = key;
+      response.label = label;
+      app.updateForecastCard(response);
+    })
+
     // Make the XHR to get the data, then update the card
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
       if (request.readyState === XMLHttpRequest.DONE) {
         if (request.status === 200) {
+          // save latest AppSell data in IndexedDB
+          app.saveToIndexedDB('appShellData', response);
+
           var response = JSON.parse(request.response);
           response.key = key;
           response.label = label;
