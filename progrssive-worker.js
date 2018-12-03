@@ -1,6 +1,7 @@
 var cacheName = 'weatherData';
 var appShellData = 'appShellData';
-  
+var weatherAPIUrlBase = 'https://publicdata-weather.firebaseio.com/';
+
 /** Files to be cached when the app loads*/
 var _cacheData = [
   '/',
@@ -46,14 +47,26 @@ var _cacheData = [
     )
   });
 
-  /** Listen for the fetch event and intercept request
-   * Get cache data for slow network or no network we can run our app
-   * Intercept all network by handling fetch request and respond either with cached data or fetch from network
+  /** Listen for the fetch event and intercept request save response to cache before returning it 
+   * or for any other request search for the response in cache and return it,
+   * or make a fetch request
   */
   self.addEventListener('fetch', function(e){
-    e.respondWith(
-      caches.match(e.request).then(function(response){
-        return response || fetch(e.request);
-      })
-    )
+    if(e.request.url.startsWith(weatherAPIUrlBase)) {
+      e.respondWith(
+        fetch(e.request).then(function(response) {
+          return caches.open(cacheName).then(function(cache) {
+            cache.put(e.request.url, response.clone());
+            return response;
+          })
+        })
+      );
+    } else {
+      e.respondWith(
+        caches.match(e.request).then(function(response){
+          return response || fetch(e.request);
+        })
+      )
+    }
+
   })

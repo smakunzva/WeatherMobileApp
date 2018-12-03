@@ -36,6 +36,7 @@
     isLoading: true,
     visibleCards: {},
     selectedCities: [],
+    savedCities: [],
     spinner: document.querySelector('.loader'),
     cardTemplate: document.querySelector('.cardTemplate'),
     container: document.querySelector('.main'),
@@ -93,9 +94,9 @@
    * Wait for DOM content to be loaded before checking for data
    */
   document.addEventListener('DOMContentLoaded', function() {
-    //app.registerServiceWorker() //register service worker
-    app.readCache();   // Check for user selected data in the cache
-    //app.getDataFromIndexedDb(); //Check for user selected data from IndexedDb 
+    app.registerServiceWorker() //register service worker
+    //app.readCache();   // Check for user selected data in the cache
+    app.getDataFromIndexedDb(); //Check for user selected data from IndexedDb 
   })
 
 
@@ -108,10 +109,10 @@
   /**
    * Save data to cache
    */
-  app.saveData = function (key, label) {
+  app.saveCacheData = function (request, response) {
     if('caches' in window) {
       caches.open(_citieCacheName).then(function(cache) {
-        cache.put(new Request(key), new Response(label));
+        cache.put(request.responseURL, new Response(response));
       }).catch(function(err){
         console.log(err);
       })
@@ -143,7 +144,6 @@
     //   })
       
     // })
-    app.updateForecastCard(injectedForecast)
   }
 
   /**
@@ -151,7 +151,6 @@
    */
   app.saveToIndexedDB = function(key, value) {
     localforage.setItem(key, value).then(function(data){
-      console.log('IndexedDB : ' + data);
     }).catch(function(err){
       console.log(err);
     })
@@ -161,6 +160,15 @@
    * Get keys from IndexedDB
    */
   app.getDataFromIndexedDb = function() {
+    //First try and get AppShell data from indexedDB
+    localforage.getItem('appShellData').then(function(data) {
+      if(data !== null) {
+        data.forEach(function(forecast) {
+          app.updateForecastCard(forecast);
+        })
+      }
+    })
+              
     localforage.keys().then(function(keys) {
       app.updateAppData(keys);
     }).catch(function(err) {
@@ -180,9 +188,11 @@
     } else {
       for(var j = 0; j < keys.length; j ++) {
         var _city = keys[j];
-        await localforage.getItem(_city).then(function(_label) {
-          app.getForecast(_city, _label)
-        });
+        if(_city !== 'appShellData') {
+          await localforage.getItem(_city).then(function(_label) {
+            app.getForecast(_city, _label)
+          });
+        }
       }
     }
   }
@@ -258,31 +268,20 @@
     var url = weatherAPIUrlBase + key + '.json';
     
     //TODO: Use the Cache then N/W strategy, put safety net if n/w runs faster than cache and up date cache one n/w response
-    
-    /** Make request to the cache */
-    // caches.open().then(function(cache){
-      
-    // });
-
-    // First try and get AppShell data from indexedDB
-    localforage.getItem('appShellData').then(function(response) {
-      var response = JSON.parse(request.response);
-      response.key = key;
-      response.label = label;
-      app.updateForecastCard(response);
-    })
 
     // Make the XHR to get the data, then update the card
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
       if (request.readyState === XMLHttpRequest.DONE) {
         if (request.status === 200) {
-          // save latest AppSell data in IndexedDB
-          app.saveToIndexedDB('appShellData', response);
-
           var response = JSON.parse(request.response);
           response.key = key;
           response.label = label;
+          app.savedCities.push(response);
+          // Update latest AppSell data in IndexedDB
+          app.saveToIndexedDB('appShellData', app.savedCities);
+          //TODO: Save data to cache and update cache
+          app.saveCacheData(request,request.response);
           app.updateForecastCard(response);
         }
       }
@@ -310,7 +309,6 @@
   app.registerServiceWorker = function() {
     if('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/progrssive-worker.js').then(function(registration) {
-        console.log('service worker registered: ' + registration);
       })
     }
   }
