@@ -6,7 +6,6 @@ var weatherAPIUrlBase = 'https://publicdata-weather.firebaseio.com/';
 var _cacheData = [
   '/',
   '/index.html',
-  '/images/cloudy.png',
   '/images/fog.png',
   '/images/clear.png',
   '/images/cloudy_s_sunny.png',
