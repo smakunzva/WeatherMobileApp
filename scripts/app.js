@@ -76,11 +76,7 @@
     app.saveToIndexedDB(key, label);
 
     app.selectedCities.push({key: key, label: label});
-
-    /**
-     * Save to cache
-     */
-    app.saveData('test', app.selectedCities)
+    
     app.toggleAddDialog(false);
   });
 
@@ -277,7 +273,7 @@
   /** Register a serice worker if the browser supports the functionality */
   app.registerServiceWorker = function() {
     if('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/progrssive-worker.js').then(function(registration) {
+      navigator.serviceWorker.register('/progressive-worker.js').then(function(registration) {
       })
     }
   }

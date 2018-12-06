@@ -1,1 +1,4 @@
+#Files and folders which must not be included in a commit
 localForage
+node_modules
+package-lock.json
