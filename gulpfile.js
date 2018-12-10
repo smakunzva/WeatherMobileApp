@@ -2,6 +2,7 @@ var gulp = require('gulp');
 var browserSync = require('browser-sync');
 var reload = browserSync.reload;
 var sass = require('gulp-sass');
+var serve = require('gulp-serve');
 var autoprefixer = require('gulp-autoprefixer');
 var minifyCss = require('gulp-minify-css');
 var rename = require('gulp-rename');
@@ -47,7 +48,8 @@ gulp.task('serve', ['generate-sw'], function() {
     notify: false,
     logPrefix: 'weatherPWA',
     server: ['.'],
-    open: false
+    open: false,
+    https: true
   });
   gulp.watch([
     './*.html',

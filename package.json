@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "private": true,
   "license": "Apache2",
-  "dependencies": {},
+  "dependencies": {
+    "gulp-serve": "^1.4.0"
+  },
   "devDependencies": {
     "browser-sync": "^2.11.2",
     "del": "^2.2.0",
